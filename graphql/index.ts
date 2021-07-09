@@ -1,17 +1,55 @@
-import { AzureFunction, Context, HttpRequest } from "@azure/functions"
+import { AzureFunction, Context, HttpRequest } from "@azure/functions";
+import { ApolloServer, gql } from "apollo-server-azure-functions";
+import { CosmosClient } from "@azure/cosmos";
 
-const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
-    context.log('HTTP trigger function processed a request.');
-    const name = (req.query.name || (req.body && req.body.name));
-    const responseMessage = name
-        ? "Hello, " + name + ". This HTTP triggered function executed successfully."
-        : "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.";
+const client = new CosmosClient(process.env.CosmosKey);
 
-    context.res = {
-        // status: 200, /* Defaults to 200 */
-        body: responseMessage
-    };
+const typeDefs = gql`
+    type VideoList {
+        id: String
+        meetingId: String!
+        tenantId: String!
+        videos: [Video]
+    }
 
+    type Video {
+        id: String
+        url: String!
+        description: String!
+        image: String
+    }
+
+    type Query {
+        getVideosForMeeting(meetingId: String): VideoList
+    }
+`;
+
+const resolvers = {
+    Query: {
+        async getVideosForMeeting(_, { meetingId }: { meetingId: string }) {
+            let results = await client
+                .database("links_db")
+                .container("videos")
+                .items.query({
+                    query: "SELECT * FROM c WHERE c.meetingId = @meetingId",
+                    parameters: [
+                        {
+                            name: "@meetingId",
+                            value: meetingId
+                        }
+                    ]
+                })
+                .fetchAll();
+
+            return results.resources;
+        }
+    }
 };
 
-export default httpTrigger;
+const server = new ApolloServer({ 
+    typeDefs, 
+    resolvers, 
+    playground: process.env.NODE_ENV === "development", 
+});
+
+export default server.createHandler();
