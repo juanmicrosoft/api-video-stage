@@ -41,7 +41,22 @@ const resolvers = {
                 })
                 .fetchAll();
 
-            return results.resources;
+            if (results.resources.length == 0) {
+                return null;
+            } else {
+                const data = results.resources[0];
+
+                //TODO: I don't know why I need to remove these private fileds.
+                // In the documentation I used it does not state you have to
+                // 
+                data["_attanchments"] = null;
+                data["_etag"] = null;
+                data["_rid"] = null;
+                data["_self"] = null;
+                data["_ts"] = null;
+
+                return data;
+            }
         }
     }
 };
