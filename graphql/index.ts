@@ -1,10 +1,24 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 import { ApolloServer, gql } from "apollo-server-azure-functions";
 import { CosmosClient } from "@azure/cosmos";
+import { v4 as uuidv4 } from "uuid";
 
 const client = new CosmosClient(process.env.CosmosKey);
 
 const typeDefs = gql`
+
+    input VideoListInput {
+        meetingId: String
+        tenantId: String
+        videos: [VideoInput]
+    }
+
+    input VideoInput {
+        url: String
+        description: String!
+        image: String
+    }
+
     type VideoList {
         id: String
         meetingId: String!
@@ -19,12 +33,23 @@ const typeDefs = gql`
         image: String
     }
 
+    type Mutation {
+        createVideoList(input: VideoListInput): VideoList
+    }    
+
     type Query {
         getVideosForMeeting(meetingId: String): VideoList
     }
 `;
 
 const resolvers = {
+    Mutation: {
+        async createVideoList (_, {input}) {
+            input["id"] = uuidv4();
+            await client.database("links_db").container("videos").items.create(input);
+            return input;
+        },
+    },
     Query: {
         async getVideosForMeeting(_, { meetingId }: { meetingId: string }) {
             let results = await client
