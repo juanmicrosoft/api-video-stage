@@ -19,6 +19,7 @@
   "dependencies": {
     "@azure/cosmos": "^3.11.5",
     "apollo-server-azure-functions": "^2.25.2",
-    "graphql": "^15.5.1"
+    "graphql": "^15.5.1",
+    "uuid": "^8.3.2"
   }
 }
