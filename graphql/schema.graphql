@@ -1,0 +1,17 @@
+type VideoList {
+    id: String
+    meetingId: String!
+    tenantId: String!
+    videos: [Video]
+}
+
+type Video {
+    id: String
+    url: String!
+    description: String!
+    image: String
+}
+
+type Query {
+    getVideosForMeeting(meetingId: String): VideoList
+}
