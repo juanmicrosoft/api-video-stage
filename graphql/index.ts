@@ -34,8 +34,8 @@ const typeDefs = gql`
     }
 
     type Mutation {
-        createVideoList(input: VideoListInput): VideoList,
-        updateVideoList(id: String, data: VideoListInput): VideoList
+        createVideoList(input: VideoListInput): String,
+        updateVideoList(id: String, tenantId: String, data: VideoListInput): Boolean
         deleteVideoList(id: String, tenantId: String): Boolean
     }    
 
@@ -48,18 +48,45 @@ const resolvers = {
     Mutation: {
         async createVideoList (_, {input}) {
             input["id"] = uuidv4();
-            await client.database("links_db").container("videos").items.create(input);
-            return input;
+            let response = await client.database("links_db").container("videos").items.create(input);
+
+            if (response.statusCode == 201) {
+                return input["id"];
+            } else {
+                return null;
+            }
         },
-        async updateVideoList (_, {id, data}) {
+        async updateVideoList (_, {id, tenantId, data}) {
+
             data["id"] = id;
-            await client.database("links_db").container("videos").items.upsert(data);
-            return data;
+            data["tenantId"] = tenantId;
+
+            let item = await client.database("links_db").container("videos").item(id, tenantId);
+
+            if (data["meedtingId"] == null) {
+                data["meetingId"] = item["meetingId"];
+            }
+
+            if (data["videos"] == null) {
+                data["videos"] = item["videos"];
+            }
+
+            let response = await item.replace(data);
+
+            if (response.statusCode == 200) {
+                return true;
+            } else {
+                return false;
+            }
         },
         async deleteVideoList (_, {id, tenantId}) {
-            const response = await client.database("links_db").container("videos").item(id,tenantId).delete();
+            let response = await client.database("links_db").container("videos").item(id,tenantId).delete();
 
-            return true;
+            if (response.statusCode == 204) {
+                return true;
+            } else {
+                return false;
+            }
         },
     },
     Query: {
