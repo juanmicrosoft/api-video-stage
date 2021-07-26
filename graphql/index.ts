@@ -34,7 +34,9 @@ const typeDefs = gql`
     }
 
     type Mutation {
-        createVideoList(input: VideoListInput): VideoList
+        createVideoList(input: VideoListInput): VideoList,
+        updateVideoList(id: String, data: VideoListInput): VideoList
+        deleteVideoList(id: String, tenantId: String): Boolean
     }    
 
     type Query {
@@ -48,6 +50,16 @@ const resolvers = {
             input["id"] = uuidv4();
             await client.database("links_db").container("videos").items.create(input);
             return input;
+        },
+        async updateVideoList (_, {id, data}) {
+            data["id"] = id;
+            await client.database("links_db").container("videos").items.upsert(data);
+            return data;
+        },
+        async deleteVideoList (_, {id, tenantId}) {
+            const response = await client.database("links_db").container("videos").item(id,tenantId).delete();
+
+            return true;
         },
     },
     Query: {
