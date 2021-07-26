@@ -1,3 +1,15 @@
+input VideoListInput {
+    meetingId: String
+    tenantId: String
+    videos: [VideoInput]
+}
+
+input VideoInput {
+    url: String
+    description: String!
+    image: String
+}
+
 type VideoList {
     id: String
     meetingId: String!
@@ -11,6 +23,12 @@ type Video {
     description: String!
     image: String
 }
+
+type Mutation {
+    createVideoList(input: VideoListInput): String,
+    updateVideoList(id: String, tenantId: String, data: VideoListInput): Boolean
+    deleteVideoList(id: String, tenantId: String): Boolean
+}    
 
 type Query {
     getVideosForMeeting(meetingId: String): VideoList
