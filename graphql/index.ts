@@ -91,6 +91,11 @@ const resolvers = {
     },
     Query: {
         async getVideosForMeeting(_, { meetingId }: { meetingId: string }) {
+
+            if (meetingId === '') {
+                return null;
+            }
+            
             let results = await client
                 .database("links_db")
                 .container("videos")
